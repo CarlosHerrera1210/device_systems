@@ -1,8 +1,8 @@
 import pytest
 from fastapi.testclient import TestClient
 
+from app.data.users_db import users_db
 from app.main import app
-from app.routes import user_routes
 
 
 client = TestClient(app)
@@ -10,8 +10,8 @@ client = TestClient(app)
 
 @pytest.fixture(autouse=True)
 def reset_users_db():
-    user_routes.users_db.clear()
-    user_routes.users_db.extend(
+    users_db.clear()
+    users_db.extend(
         [
             {
                 "id": 1,
@@ -37,7 +37,7 @@ def reset_users_db():
         ]
     )
     yield
-    user_routes.users_db.clear()
+    users_db.clear()
 
 
 def test_health_endpoint_returns_custom_headers():
@@ -45,7 +45,7 @@ def test_health_endpoint_returns_custom_headers():
 
     assert response.status_code == 200
     assert response.headers["X-App-Name"] == "device_systems"
-    assert response.headers["X-API-Version"] == "1.0"
+    assert response.headers["X-API-Version"] == "2.0.0"
 
 
 def test_list_users_returns_headers_and_users():
@@ -53,7 +53,7 @@ def test_list_users_returns_headers_and_users():
 
     assert response.status_code == 200
     assert response.headers["X-App-Name"] == "device_systems"
-    assert response.headers["X-API-Version"] == "1.0"
+    assert response.headers["X-API-Version"] == "2.0.0"
     assert response.json()["total"] >= 3
 
 
@@ -95,7 +95,7 @@ def test_create_user():
     assert response.json()["email"] == "maria.lopez@example.com"
 
 
-def test_duplicate_email_returns_conflict():
+def test_duplicate_email_returns_bad_request():
     payload = {
         "name": "Carlos Herrera",
         "email": "carlos@example.com",
@@ -105,7 +105,7 @@ def test_duplicate_email_returns_conflict():
 
     response = client.post("/users", json=payload)
 
-    assert response.status_code == 409
+    assert response.status_code == 400
 
 
 def test_invalid_name_returns_validation_error():
@@ -149,6 +149,48 @@ def test_invalid_role_returns_validation_error():
 
 def test_unknown_user_returns_not_found():
     response = client.get("/users/999")
+
+    assert response.status_code == 404
+
+
+def test_update_user_full():
+    payload = {
+        "name": "Carlos Actualizado",
+        "email": "carlos.actualizado@example.com",
+        "role": "support",
+        "is_active": False,
+    }
+
+    response = client.put("/users/1", json=payload)
+
+    assert response.status_code == 200
+    assert response.json()["name"] == "Carlos Actualizado"
+    assert response.json()["role"] == "support"
+
+
+def test_update_user_partial():
+    payload = {"role": "support"}
+
+    response = client.patch("/users/1", json=payload)
+
+    assert response.status_code == 200
+    assert response.json()["role"] == "support"
+
+
+def test_patch_empty_returns_bad_request():
+    response = client.patch("/users/1", json={})
+
+    assert response.status_code == 400
+
+
+def test_delete_user():
+    response = client.delete("/users/1")
+
+    assert response.status_code == 204
+
+
+def test_delete_unknown_user_returns_not_found():
+    response = client.delete("/users/999")
 
     assert response.status_code == 404
 
