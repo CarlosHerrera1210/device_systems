@@ -48,6 +48,21 @@ def test_health_endpoint_returns_custom_headers():
     assert response.headers["X-API-Version"] == "2.0.0"
 
 
+def test_openapi_schema_is_available():
+    response = client.get("/openapi.json")
+
+    assert response.status_code == 200
+    assert response.json()["info"]["title"] == "device_systems API"
+    assert "/users" in response.json()["paths"]
+
+
+def test_redoc_page_uses_available_stable_bundle():
+    response = client.get("/redoc")
+
+    assert response.status_code == 200
+    assert "redoc@2.5.0/bundles/redoc.standalone.js" in response.text
+
+
 def test_list_users_returns_headers_and_users():
     response = client.get("/users")
 

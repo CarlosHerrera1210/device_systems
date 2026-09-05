@@ -1,5 +1,3 @@
-from typing import Any
-
 from fastapi import HTTPException, status
 
 from app.data.users_db import users_db
@@ -20,29 +18,16 @@ class UserService:
         return filtered_users
 
     @staticmethod
-    def get_user_by_id(user_id: int) -> dict:
-        user = next((user for user in users_db if user["id"] == user_id), None)
-        if user is None:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="Usuario no encontrado",
-            )
-        return user
-
-    @staticmethod
-    def email_exists(email: str) -> bool:
-        return any(user["email"].lower() == email.lower() for user in users_db)
-
-    @staticmethod
     def create_user(user_data: UserCreate) -> dict:
-        if UserService.email_exists(str(user_data.email)):
+        if any(u["email"].lower() == str(user_data.email).lower() for u in users_db):
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="Correo electrónico duplicado",
             )
 
+        new_id = max((u["id"] for u in users_db), default=0) + 1
         new_user = {
-            "id": len(users_db) + 1,
+            "id": new_id,
             "name": user_data.name,
             "email": str(user_data.email),
             "role": user_data.role,
@@ -52,14 +37,13 @@ class UserService:
         return new_user
 
     @staticmethod
-    def update_user_full(user_id: int, user_data: UserUpdate) -> dict:
-        user = UserService.get_user_by_id(user_id)
-
-        if user["email"].lower() != str(user_data.email).lower() and UserService.email_exists(str(user_data.email)):
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Correo electrónico duplicado",
-            )
+    def update_user_full(user: dict, user_data: UserUpdate) -> dict:
+        if user["email"].lower() != str(user_data.email).lower():
+            if any(u["email"].lower() == str(user_data.email).lower() for u in users_db):
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="Correo electrónico duplicado",
+                )
 
         user.update(
             {
@@ -72,29 +56,27 @@ class UserService:
         return user
 
     @staticmethod
-    def update_user_partial(user_id: int, user_data: UserUpdatePartial) -> dict:
-        user = UserService.get_user_by_id(user_id)
+    def update_user_partial(user: dict, user_data: UserUpdatePartial) -> dict:
+        updated_data = user_data.model_dump(exclude_unset=True)
 
-        if not user_data.model_dump(exclude_unset=True):
+        if not updated_data:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="Debe enviar al menos un campo para actualizar",
             )
 
-        updated_data = user_data.model_dump(exclude_unset=True)
-
         if "email" in updated_data:
             email = str(updated_data["email"])
-            if user["email"].lower() != email.lower() and UserService.email_exists(email):
-                raise HTTPException(
-                    status_code=status.HTTP_400_BAD_REQUEST,
-                    detail="Correo electrónico duplicado",
-                )
+            if user["email"].lower() != email.lower():
+                if any(u["email"].lower() == email.lower() for u in users_db):
+                    raise HTTPException(
+                        status_code=status.HTTP_400_BAD_REQUEST,
+                        detail="Correo electrónico duplicado",
+                    )
 
         user.update(updated_data)
         return user
 
     @staticmethod
-    def delete_user(user_id: int) -> None:
-        user = UserService.get_user_by_id(user_id)
+    def delete_user(user: dict) -> None:
         users_db.remove(user)

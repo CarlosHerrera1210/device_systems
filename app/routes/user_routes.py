@@ -2,7 +2,6 @@ from typing import Optional
 
 from fastapi import APIRouter, Depends, Header, Query, Response, status
 
-from app.data.users_db import users_db
 from app.dependencies.user_dependencies import get_user_or_404
 from app.schemas.user_schema import (
     Role,
@@ -52,7 +51,7 @@ def list_users(
     description="Devuelve un usuario específico según su identificador.",
     response_description="Usuario encontrado.",
 )
-def get_user(user_id: int, response: Response, user: dict = Depends(get_user_or_404)) -> dict:
+def get_user(response: Response, user: dict = Depends(get_user_or_404)) -> dict:
     add_custom_headers(response)
     return user
 
@@ -77,9 +76,13 @@ def create_user(user: UserCreate, response: Response) -> dict:
     description="Reemplaza completamente la información de un usuario existente.",
     response_description="Usuario actualizado.",
 )
-def update_user_full(user_id: int, user_data: UserUpdate, response: Response) -> dict:
+def update_user_full(
+    user_data: UserUpdate,
+    response: Response,
+    user: dict = Depends(get_user_or_404),
+) -> dict:
     add_custom_headers(response)
-    return UserService.update_user_full(user_id, user_data)
+    return UserService.update_user_full(user, user_data)
 
 
 @router.patch(
@@ -89,9 +92,13 @@ def update_user_full(user_id: int, user_data: UserUpdate, response: Response) ->
     description="Modifica solo los campos enviados por el cliente para un usuario existente.",
     response_description="Usuario actualizado parcialmente.",
 )
-def update_user_partial(user_id: int, user_data: UserUpdatePartial, response: Response) -> dict:
+def update_user_partial(
+    user_data: UserUpdatePartial,
+    response: Response,
+    user: dict = Depends(get_user_or_404),
+) -> dict:
     add_custom_headers(response)
-    return UserService.update_user_partial(user_id, user_data)
+    return UserService.update_user_partial(user, user_data)
 
 
 @router.delete(
@@ -101,8 +108,7 @@ def update_user_partial(user_id: int, user_data: UserUpdatePartial, response: Re
     description="Elimina un usuario existente según su identificador.",
     response_description="Usuario eliminado correctamente.",
 )
-def delete_user(user_id: int, response: Response) -> Response:
+def delete_user(response: Response, user: dict = Depends(get_user_or_404)) -> Response:
     add_custom_headers(response)
-    UserService.delete_user(user_id)
+    UserService.delete_user(user)
     return Response(status_code=status.HTTP_204_NO_CONTENT)
-
