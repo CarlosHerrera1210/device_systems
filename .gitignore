@@ -4,4 +4,7 @@ __pycache__/
 venv/
 .env
 .pytest_cache/
+device_systems.db
+test_device_systems.db
+pytest-cache-files-*/
 

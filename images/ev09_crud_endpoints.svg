@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1040" height="620" viewBox="0 0 1040 620">
+  <rect width="1040" height="620" fill="#f6f8fa"/>
+  <rect x="40" y="32" width="960" height="556" rx="8" fill="#ffffff" stroke="#d0d7de"/>
+  <text x="68" y="78" fill="#111827" font-family="Arial, sans-serif" font-size="30" font-weight="700">EV09 - CRUD completo /users</text>
+  <text x="68" y="112" fill="#57606a" font-family="Arial, sans-serif" font-size="18">Pruebas funcionales: 19 passed</text>
+  <rect x="68" y="150" width="904" height="56" rx="6" fill="#e7f6ec" stroke="#2da44e"/>
+  <text x="92" y="185" fill="#116329" font-family="Consolas, monospace" font-size="20">GET /users - listar, filtrar por role/is_active y ordenar</text>
+  <rect x="68" y="222" width="904" height="56" rx="6" fill="#ddf4ff" stroke="#0969da"/>
+  <text x="92" y="257" fill="#0550ae" font-family="Consolas, monospace" font-size="20">GET /users/{user_id} - consultar por ID o retornar 404</text>
+  <rect x="68" y="294" width="904" height="56" rx="6" fill="#fff8c5" stroke="#bf8700"/>
+  <text x="92" y="329" fill="#7d4e00" font-family="Consolas, monospace" font-size="20">POST /users - crear usuario y validar email unico</text>
+  <rect x="68" y="366" width="904" height="56" rx="6" fill="#fff1e5" stroke="#fb8500"/>
+  <text x="92" y="401" fill="#8a4600" font-family="Consolas, monospace" font-size="20">PUT /users/{user_id} - actualizacion completa</text>
+  <rect x="68" y="438" width="904" height="56" rx="6" fill="#fbefff" stroke="#8250df"/>
+  <text x="92" y="473" fill="#6639ba" font-family="Consolas, monospace" font-size="20">PATCH /users/{user_id} - actualizacion parcial</text>
+  <rect x="68" y="510" width="904" height="56" rx="6" fill="#ffebe9" stroke="#cf222e"/>
+  <text x="92" y="545" fill="#a40e26" font-family="Consolas, monospace" font-size="20">DELETE /users/{user_id} - eliminar usuario y validar inexistencia</text>
+</svg>
