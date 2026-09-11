@@ -1,4 +1,5 @@
 from typing import Literal
+from datetime import datetime
 
 from pydantic import BaseModel, ConfigDict, EmailStr, Field
 
@@ -20,7 +21,7 @@ class UserUpdate(BaseModel):
     is_active: bool = Field(..., examples=[True])
 
 
-class UserUpdatePartial(BaseModel):
+class UserPatch(BaseModel):
     name: str | None = Field(default=None, min_length=3, examples=["Carlos Herrera"])
     email: EmailStr | None = Field(default=None, examples=["carlos@example.com"])
     role: Role | None = Field(default=None, examples=["support"])
@@ -33,6 +34,7 @@ class UserResponse(BaseModel):
     email: EmailStr
     role: Role
     is_active: bool
+    created_at: datetime
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -50,4 +52,7 @@ class ErrorResponse(BaseModel):
     error: bool
     message: str
     status_code: int
+
+
+UserUpdatePartial = UserPatch
 
