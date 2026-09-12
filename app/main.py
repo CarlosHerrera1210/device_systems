@@ -1,15 +1,26 @@
+from contextlib import asynccontextmanager
+
 from fastapi import Depends, FastAPI, Response
 from fastapi.openapi.docs import get_redoc_html
 from fastapi.responses import HTMLResponse
 
+from app.database.connection import create_tables
 from app.dependencies.user_dependencies import get_api_config
+from app.models import user_model
 from app.routes.user_routes import router as user_router
 from app.schemas.user_schema import APIMessage
 
 
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    create_tables()
+    yield
+
+
 app = FastAPI(
     title="device_systems API",
-    version="2.0.0",
+    version="3.0.0",
+    lifespan=lifespan,
     redoc_url=None,
     description="API REST para la gestión de usuarios del sistema device_systems.",
     contact={
@@ -34,7 +45,7 @@ def redoc() -> HTMLResponse:
 
 def add_custom_headers(response: Response) -> None:
     response.headers["X-App-Name"] = "device_systems"
-    response.headers["X-API-Version"] = "2.0.0"
+    response.headers["X-API-Version"] = "3.0.0"
 
 
 @app.get(
