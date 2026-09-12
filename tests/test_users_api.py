@@ -144,6 +144,28 @@ def test_create_user():
     assert response.json()["role"] == "user"
 
 
+def test_user_persists_across_database_sessions():
+    payload = {
+        "name": "Usuario Persistente",
+        "email": "usuario.persistente@example.com",
+        "role": "user",
+        "is_active": True,
+    }
+
+    response = client.post("/users", json=payload)
+
+    assert response.status_code == 201
+    user_id = response.json()["id"]
+
+    db = TestingSessionLocal()
+    persisted_user = db.get(User, user_id)
+
+    assert persisted_user is not None
+    assert persisted_user.email == payload["email"]
+    assert persisted_user.name == payload["name"]
+    db.close()
+
+
 def test_duplicate_email_returns_bad_request():
     payload = {
         "name": "Carlos Herrera",
