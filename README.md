@@ -44,7 +44,12 @@ device_systems/
 |       `-- user_service.py
 |-- images/
 |   |-- ev09_sqlalchemy_database.svg
-|   `-- ev09_crud_endpoints.svg
+|   |-- ev09_crud_endpoints.svg
+|   |-- ev09_swagger_ui.png
+|   |-- ev09_redoc_ui.png
+|   |-- ev09_get_users.png
+|   |-- ev09_get_user_by_id.png
+|   `-- ev09_filters.png
 |-- tests/
 |   `-- test_users_api.py
 |-- .gitignore
@@ -266,6 +271,26 @@ Resultado validado:
 ### CRUD completo
 
 ![CRUD completo](images/ev09_crud_endpoints.svg)
+
+### Swagger UI
+
+![Swagger UI de EV09](images/ev09_swagger_ui.png)
+
+### ReDoc
+
+![ReDoc de EV09](images/ev09_redoc_ui.png)
+
+### Listado de usuarios desde SQLite
+
+![Listado de usuarios EV09](images/ev09_get_users.png)
+
+### Consulta de usuario por ID desde SQLite
+
+![Consulta por ID EV09](images/ev09_get_user_by_id.png)
+
+### Filtros por rol y estado desde SQLite
+
+![Filtros EV09](images/ev09_filters.png)
 
 ## Evidencias sugeridas para capturas reales
 
