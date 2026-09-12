@@ -1,43 +1,68 @@
 import pytest
 from fastapi.testclient import TestClient
+from sqlalchemy import create_engine
+from sqlalchemy.exc import IntegrityError
+from sqlalchemy.orm import sessionmaker
 
-from app.data.users_db import users_db
+from app.database.connection import Base
+from app.dependencies.database_dependency import get_db
 from app.main import app
+from app.models.user_model import User
 
 
+SQLALCHEMY_DATABASE_URL = "sqlite:///./test_device_systems.db"
+
+engine = create_engine(
+    SQLALCHEMY_DATABASE_URL,
+    connect_args={"check_same_thread": False},
+)
+TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+
+
+def override_get_db():
+    db = TestingSessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
+
+
+app.dependency_overrides[get_db] = override_get_db
 client = TestClient(app)
 
 
 @pytest.fixture(autouse=True)
-def reset_users_db():
-    users_db.clear()
-    users_db.extend(
+def reset_database():
+    Base.metadata.drop_all(bind=engine)
+    Base.metadata.create_all(bind=engine)
+
+    db = TestingSessionLocal()
+    db.add_all(
         [
-            {
-                "id": 1,
-                "name": "Carlos Herrera",
-                "email": "carlos@example.com",
-                "role": "admin",
-                "is_active": True,
-            },
-            {
-                "id": 2,
-                "name": "Laura Gomez",
-                "email": "laura@example.com",
-                "role": "support",
-                "is_active": True,
-            },
-            {
-                "id": 3,
-                "name": "Andres Perez",
-                "email": "andres@example.com",
-                "role": "user",
-                "is_active": False,
-            },
+            User(
+                name="Carlos Herrera",
+                email="carlos@example.com",
+                role="admin",
+                is_active=True,
+            ),
+            User(
+                name="Laura Gomez",
+                email="laura@example.com",
+                role="support",
+                is_active=True,
+            ),
+            User(
+                name="Andres Perez",
+                email="andres@example.com",
+                role="user",
+                is_active=False,
+            ),
         ]
     )
+    db.commit()
+    db.close()
     yield
-    users_db.clear()
+    Base.metadata.drop_all(bind=engine)
 
 
 def test_health_endpoint_returns_custom_headers():
@@ -45,7 +70,7 @@ def test_health_endpoint_returns_custom_headers():
 
     assert response.status_code == 200
     assert response.headers["X-App-Name"] == "device_systems"
-    assert response.headers["X-API-Version"] == "2.0.0"
+    assert response.headers["X-API-Version"] == "3.0.0"
 
 
 def test_openapi_schema_is_available():
@@ -68,8 +93,8 @@ def test_list_users_returns_headers_and_users():
 
     assert response.status_code == 200
     assert response.headers["X-App-Name"] == "device_systems"
-    assert response.headers["X-API-Version"] == "2.0.0"
-    assert response.json()["total"] >= 3
+    assert response.headers["X-API-Version"] == "3.0.0"
+    assert response.json()["total"] == 3
 
 
 def test_get_user_by_id():
@@ -77,6 +102,7 @@ def test_get_user_by_id():
 
     assert response.status_code == 200
     assert response.json()["email"] == "carlos@example.com"
+    assert "created_at" in response.json()
 
 
 def test_filter_users_by_role():
@@ -95,6 +121,14 @@ def test_filter_users_by_active_status():
     assert response.json()["users"][0]["is_active"] is False
 
 
+def test_order_users_by_name():
+    response = client.get("/users?order_by=name")
+
+    assert response.status_code == 200
+    names = [user["name"] for user in response.json()["users"]]
+    assert names == sorted(names)
+
+
 def test_create_user():
     payload = {
         "name": "Maria Lopez",
@@ -106,8 +140,30 @@ def test_create_user():
     response = client.post("/users", json=payload)
 
     assert response.status_code == 201
-    assert response.json()["id"] == 4
     assert response.json()["email"] == "maria.lopez@example.com"
+    assert response.json()["role"] == "user"
+
+
+def test_user_persists_across_database_sessions():
+    payload = {
+        "name": "Usuario Persistente",
+        "email": "usuario.persistente@example.com",
+        "role": "user",
+        "is_active": True,
+    }
+
+    response = client.post("/users", json=payload)
+
+    assert response.status_code == 201
+    user_id = response.json()["id"]
+
+    db = TestingSessionLocal()
+    persisted_user = db.get(User, user_id)
+
+    assert persisted_user is not None
+    assert persisted_user.email == payload["email"]
+    assert persisted_user.name == payload["name"]
+    db.close()
 
 
 def test_duplicate_email_returns_bad_request():
@@ -162,6 +218,24 @@ def test_invalid_role_returns_validation_error():
     assert response.status_code == 422
 
 
+def test_database_rejects_invalid_role_constraint():
+    db = TestingSessionLocal()
+    db.add(
+        User(
+            name="Rol Invalido",
+            email="rol.invalido@example.com",
+            role="manager",
+            is_active=True,
+        )
+    )
+
+    with pytest.raises(IntegrityError):
+        db.commit()
+
+    db.rollback()
+    db.close()
+
+
 def test_unknown_user_returns_not_found():
     response = client.get("/users/999")
 
@@ -202,6 +276,7 @@ def test_delete_user():
     response = client.delete("/users/1")
 
     assert response.status_code == 204
+    assert client.get("/users/1").status_code == 404
 
 
 def test_delete_unknown_user_returns_not_found():
