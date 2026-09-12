@@ -49,7 +49,14 @@ device_systems/
 |   |-- ev09_redoc_ui.png
 |   |-- ev09_get_users.png
 |   |-- ev09_get_user_by_id.png
-|   `-- ev09_filters.png
+|   |-- ev09_filters.png
+|   |-- ev09_post_user.png
+|   |-- ev09_put_user.png
+|   |-- ev09_patch_user.png
+|   |-- ev09_delete_user.png
+|   |-- ev09_error_400_duplicate_email.png
+|   |-- ev09_error_404_user_not_found.png
+|   `-- ev09_error_422_validation.png
 |-- tests/
 |   `-- test_users_api.py
 |-- .gitignore
@@ -291,6 +298,34 @@ Resultado validado:
 ### Filtros por rol y estado desde SQLite
 
 ![Filtros EV09](images/ev09_filters.png)
+
+### Creación de usuario
+
+![POST de usuario EV09](images/ev09_post_user.png)
+
+### Actualización completa
+
+![PUT de usuario EV09](images/ev09_put_user.png)
+
+### Actualización parcial
+
+![PATCH de usuario EV09](images/ev09_patch_user.png)
+
+### Eliminación de usuario
+
+![DELETE de usuario EV09](images/ev09_delete_user.png)
+
+### Error 400: correo duplicado
+
+![Error 400 por correo duplicado](images/ev09_error_400_duplicate_email.png)
+
+### Error 404: usuario inexistente
+
+![Error 404 por usuario inexistente](images/ev09_error_404_user_not_found.png)
+
+### Error 422: datos inválidos
+
+![Error 422 de validación](images/ev09_error_422_validation.png)
 
 ## Evidencias sugeridas para capturas reales
 
