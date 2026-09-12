@@ -43,8 +43,9 @@ device_systems/
 |       |-- __init__.py
 |       `-- user_service.py
 |-- images/
-|   |-- ev09_sqlalchemy_database.svg
-|   |-- ev09_crud_endpoints.svg
+|   |-- ev09_project_structure.png
+|   |-- ev09_database_file.png
+|   |-- ev09_pytest_results.png
 |   |-- ev09_swagger_ui.png
 |   |-- ev09_redoc_ui.png
 |   |-- ev09_get_users.png
@@ -271,13 +272,13 @@ Resultado validado:
 
 ## Evidencias
 
-### Persistencia con SQLAlchemy
+### Estructura del proyecto
 
-![Persistencia con SQLAlchemy](images/ev09_sqlalchemy_database.svg)
+![Estructura del proyecto EV09](images/ev09_project_structure.png)
 
-### CRUD completo
+### Base de datos SQLite
 
-![CRUD completo](images/ev09_crud_endpoints.svg)
+![Archivo de base de datos EV09](images/ev09_database_file.png)
 
 ### Swagger UI
 
@@ -327,17 +328,9 @@ Resultado validado:
 
 ![Error 422 de validación](images/ev09_error_422_validation.png)
 
-## Evidencias sugeridas para capturas reales
+### Resultado de pruebas automatizadas
 
-Para completar la entrega visual, toma capturas de:
-
-- Estructura del proyecto en VS Code.
-- Archivo `device_systems.db` generado.
-- Swagger UI en `http://127.0.0.1:8000/docs`.
-- Pruebas de `GET /users`, `GET /users/{user_id}`, `POST /users`, `PUT`, `PATCH` y `DELETE`.
-- Error `400` por email duplicado.
-- Error `404` por usuario inexistente.
-- Error `422` por datos invalidos.
+![Resultado de pytest EV09](images/ev09_pytest_results.png)
 
 ## Reflexion final
 
