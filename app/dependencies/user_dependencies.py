@@ -1,11 +1,13 @@
 from fastapi import Depends, Header, HTTPException, status
+from sqlalchemy.orm import Session
 
-from app.data.users_db import users_db
+from app.dependencies.database_dependency import get_db
 from app.schemas.user_schema import Role
+from app.services.user_service import UserService
 
 
-def get_user_or_404(user_id: int):
-    user = next((user for user in users_db if user["id"] == user_id), None)
+def get_user_or_404(user_id: int, db: Session = Depends(get_db)):
+    user = UserService.get_user_by_id(db, user_id)
     if user is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -14,8 +16,8 @@ def get_user_or_404(user_id: int):
     return user
 
 
-def validate_email_not_exists(email: str) -> str:
-    if any(user["email"].lower() == email.lower() for user in users_db):
+def validate_email_not_exists(email: str, db: Session) -> str:
+    if UserService.get_user_by_email(db, email) is not None:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Correo electrónico duplicado",
@@ -35,7 +37,7 @@ def validate_role(role: Role | None = None) -> Role | None:
 def get_api_config() -> dict:
     return {
         "app_name": "device_systems",
-        "version": "2.0.0",
+        "version": "3.0.0",
         "environment": "development",
     }
 
