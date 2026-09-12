@@ -1,6 +1,7 @@
 import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import sessionmaker
 
 from app.database.connection import Base
@@ -193,6 +194,24 @@ def test_invalid_role_returns_validation_error():
     response = client.post("/users", json=payload)
 
     assert response.status_code == 422
+
+
+def test_database_rejects_invalid_role_constraint():
+    db = TestingSessionLocal()
+    db.add(
+        User(
+            name="Rol Invalido",
+            email="rol.invalido@example.com",
+            role="manager",
+            is_active=True,
+        )
+    )
+
+    with pytest.raises(IntegrityError):
+        db.commit()
+
+    db.rollback()
+    db.close()
 
 
 def test_unknown_user_returns_not_found():

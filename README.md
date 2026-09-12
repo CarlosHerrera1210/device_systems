@@ -121,7 +121,7 @@ El modelo `User` esta en `app/models/user_model.py` y representa la tabla `users
 | `id` | Integer | Primary key e indice |
 | `name` | String | Obligatorio |
 | `email` | String | Unico, obligatorio e indexado |
-| `role` | String | Obligatorio |
+| `role` | String | Obligatorio y limitado a `admin`, `support` o `user` |
 | `is_active` | Boolean | Por defecto `True` |
 | `created_at` | DateTime | Fecha automatica de creacion |
 
@@ -141,6 +141,9 @@ Validaciones:
 - `email`: formato valido.
 - `role`: solo permite `admin`, `support` o `user`.
 - `is_active`: valor booleano.
+
+El modelo SQLAlchemy también aplica el constraint `ck_users_role_allowed`, que impide
+guardar directamente en SQLite un rol diferente de `admin`, `support` o `user`.
 
 ## Diferencia entre modelo y schema
 
@@ -251,7 +254,7 @@ pytest -q
 Resultado validado:
 
 ```text
-19 passed
+20 passed
 ```
 
 ## Evidencias
