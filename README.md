@@ -245,7 +245,7 @@ X-API-Version: 3.0.0
 
 ## Pruebas automatizadas
 
-El proyecto incluye pruebas con `pytest` y `TestClient` para verificar CRUD, filtros, cabeceras, validaciones, errores y documentacion OpenAPI.
+El proyecto incluye pruebas con `pytest` y `TestClient` para verificar CRUD, persistencia entre sesiones, filtros, cabeceras, validaciones, errores y documentacion OpenAPI.
 
 ```bash
 pytest -q
@@ -254,7 +254,7 @@ pytest -q
 Resultado validado:
 
 ```text
-20 passed
+21 passed
 ```
 
 ## Evidencias
