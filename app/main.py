@@ -1,35 +1,30 @@
-from contextlib import asynccontextmanager
-
 from fastapi import Depends, FastAPI, Response
 from fastapi.openapi.docs import get_redoc_html
 from fastapi.responses import HTMLResponse
 
-from app.database.connection import create_tables
 from app.dependencies.user_dependencies import get_api_config
-from app.models import user_model
+from app.models import Device, Loan, User
+from app.routes.device_routes import router as device_router
+from app.routes.loan_routes import router as loan_router
 from app.routes.user_routes import router as user_router
 from app.schemas.user_schema import APIMessage
-
-
-@asynccontextmanager
-async def lifespan(app: FastAPI):
-    create_tables()
-    yield
 
 
 app = FastAPI(
     title="device_systems API",
     version="3.0.0",
-    lifespan=lifespan,
     redoc_url=None,
     description="API REST para la gestión de usuarios del sistema device_systems.",
     contact={
         "name": "Equipo device_systems",
+        "email": "soporte@device_systems.test",
         "email": "soporte@devicesystems.com",
     },
     openapi_tags=[
         {"name": "Health", "description": "Endpoints de verificación del servicio."},
         {"name": "Users", "description": "Gestión del recurso usuarios."},
+        {"name": "Devices", "description": "Gestión del inventario de dispositivos."},
+        {"name": "Loans", "description": "Gestión de préstamos y consultas relacionadas."},
     ],
 )
 
@@ -45,6 +40,7 @@ def redoc() -> HTMLResponse:
 
 def add_custom_headers(response: Response) -> None:
     response.headers["X-App-Name"] = "device_systems"
+    response.headers["X-API-Version"] = "2.0.0"
     response.headers["X-API-Version"] = "3.0.0"
 
 
@@ -62,4 +58,6 @@ def health_check(response: Response, config: dict = Depends(get_api_config)) -> 
 
 
 app.include_router(user_router)
+app.include_router(device_router)
+app.include_router(loan_router)
 

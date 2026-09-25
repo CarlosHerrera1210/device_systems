@@ -14,7 +14,9 @@ from app.schemas.user_schema import (
     UserUpdate,
     UserPatch,
 )
+from app.schemas.loan_schema import LoanListResponse
 from app.services.user_service import UserService
+from app.services.loan_service import LoanService
 
 
 router = APIRouter(prefix="/users", tags=["Users"])
@@ -64,6 +66,24 @@ def list_users(
 def get_user(response: Response, user: User = Depends(get_user_or_404)) -> User:
     add_custom_headers(response)
     return user
+
+
+@router.get(
+    "/{user_id}/loans",
+    response_model=LoanListResponse,
+    summary="Consultar préstamos de un usuario",
+    description="Devuelve todos los préstamos registrados para un usuario.",
+    response_description="Préstamos asociados al usuario.",
+)
+def get_user_loans(
+    response: Response,
+    user_id: int,
+    db: Session = Depends(get_db),
+) -> LoanListResponse:
+    add_custom_headers(response)
+    get_user_or_404(user_id, db)
+    loans = LoanService.get_user_loans(db, user_id)
+    return LoanListResponse(total=len(loans), loans=loans)
 
 
 @router.post(
