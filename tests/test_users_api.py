@@ -6,6 +6,7 @@ from sqlalchemy.orm import sessionmaker
 
 from app.database.connection import Base
 from app.dependencies.database_dependency import get_db
+from app.dependencies.auth_dependency import get_current_active_user
 from app.main import app
 from app.models.user_model import User
 
@@ -27,6 +28,10 @@ def override_get_db():
         db.close()
 
 
+def override_current_user():
+    return User(id=1, name="Test Admin", email="test-admin@example.com", role="admin", is_active=True)
+
+
 app.dependency_overrides[get_db] = override_get_db
 client = TestClient(app)
 
@@ -34,6 +39,7 @@ client = TestClient(app)
 @pytest.fixture(autouse=True)
 def reset_database():
     app.dependency_overrides[get_db] = override_get_db
+    app.dependency_overrides[get_current_active_user] = override_current_user
     Base.metadata.drop_all(bind=engine)
     Base.metadata.create_all(bind=engine)
 

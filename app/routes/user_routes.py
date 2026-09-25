@@ -1,9 +1,10 @@
 from typing import Optional
 
-from fastapi import APIRouter, Depends, Header, Query, Response, status
+from fastapi import APIRouter, Depends, Header, Query, Request, Response, status
 from sqlalchemy.orm import Session
 
 from app.dependencies.database_dependency import get_db
+from app.dependencies.auth_dependency import AdminUser, CurrentUser
 from app.dependencies.user_dependencies import get_user_or_404
 from app.models.user_model import User
 from app.schemas.user_schema import (
@@ -17,6 +18,7 @@ from app.schemas.user_schema import (
 from app.schemas.loan_schema import LoanListResponse
 from app.services.user_service import UserService
 from app.services.loan_service import LoanService
+from app.security.rate_limit import limiter
 
 
 router = APIRouter(prefix="/users", tags=["Users"])
@@ -34,13 +36,16 @@ def add_custom_headers(response: Response) -> None:
     description="Devuelve la lista de usuarios, con posibilidad de filtrar por rol o estado activo.",
     response_description="Lista de usuarios y total de resultados.",
 )
+@limiter.limit("30/minute")
 def list_users(
+    request: Request,
     response: Response,
     role: Optional[Role] = Query(default=None, description="Filtrar usuarios por rol"),
     is_active: Optional[bool] = Query(default=None, description="Filtrar por estado activo"),
     order_by: str = Query(default="created_at", pattern="^(name|created_at)$"),
     user_agent: Optional[str] = Header(default=None),
     db: Session = Depends(get_db),
+    current_user: CurrentUser = None,
 ) -> UserListResponse:
     add_custom_headers(response)
     filtered_users = UserService.get_all_users(
@@ -63,7 +68,7 @@ def list_users(
     description="Devuelve un usuario específico según su identificador.",
     response_description="Usuario encontrado.",
 )
-def get_user(response: Response, user: User = Depends(get_user_or_404)) -> User:
+def get_user(response: Response, user: User = Depends(get_user_or_404), current_user: CurrentUser = None) -> User:
     add_custom_headers(response)
     return user
 
@@ -79,6 +84,7 @@ def get_user_loans(
     response: Response,
     user_id: int,
     db: Session = Depends(get_db),
+    current_user: CurrentUser = None,
 ) -> LoanListResponse:
     add_custom_headers(response)
     get_user_or_404(user_id, db)
@@ -98,6 +104,7 @@ def create_user(
     user: UserCreate,
     response: Response,
     db: Session = Depends(get_db),
+    current_user: AdminUser = None,
 ) -> User:
     add_custom_headers(response)
     return UserService.create_user(db, user)
@@ -115,6 +122,7 @@ def update_user_full(
     response: Response,
     user: User = Depends(get_user_or_404),
     db: Session = Depends(get_db),
+    current_user: AdminUser = None,
 ) -> User:
     add_custom_headers(response)
     return UserService.update_user_full(db, user, user_data)
@@ -132,6 +140,7 @@ def update_user_partial(
     response: Response,
     user: User = Depends(get_user_or_404),
     db: Session = Depends(get_db),
+    current_user: AdminUser = None,
 ) -> User:
     add_custom_headers(response)
     return UserService.update_user_partial(db, user, user_data)
@@ -148,6 +157,7 @@ def delete_user(
     response: Response,
     user: User = Depends(get_user_or_404),
     db: Session = Depends(get_db),
+    current_user: AdminUser = None,
 ) -> None:
     add_custom_headers(response)
     UserService.delete_user(db, user)

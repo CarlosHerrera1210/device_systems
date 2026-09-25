@@ -4,6 +4,7 @@ from fastapi import APIRouter, Depends, Query, Response, status
 from sqlalchemy.orm import Session
 
 from app.dependencies.database_dependency import get_db
+from app.dependencies.auth_dependency import AdminOrSupport, AdminUser, CurrentUser
 from app.dependencies.device_dependencies import get_device_or_404
 from app.models.device_model import Device
 from app.schemas.device_schema import DeviceCreate, DeviceListResponse, DevicePatch, DeviceResponse, DeviceUpdate
@@ -33,6 +34,7 @@ def list_devices(
     search: Optional[str] = Query(default=None, description="Buscar por nombre, serial o tipo"),
     order_by: str = Query(default="created_at", pattern="^(name|created_at)$"),
     db: Session = Depends(get_db),
+    current_user: CurrentUser = None,
 )-> DeviceListResponse:
     add_custom_headers(response)
     devices = DeviceService.get_all_devices(
@@ -52,7 +54,11 @@ def list_devices(
     summary="Consultar dispositivo por ID",
     description="Devuelve la información de un dispositivo específico.",
 )
-def get_device(response: Response, device: Device = Depends(get_device_or_404)) -> Device:
+def get_device(
+    response: Response,
+    device: Device = Depends(get_device_or_404),
+    current_user: CurrentUser = None,
+) -> Device:
     add_custom_headers(response)
     return device
 
@@ -68,6 +74,7 @@ def get_device_loans(
     response: Response,
     device_id: int,
     db: Session = Depends(get_db),
+    current_user: CurrentUser = None,
 ) -> LoanListResponse:
     add_custom_headers(response)
     get_device_or_404(device_id, db)
@@ -86,6 +93,7 @@ def create_device(
     device_data: DeviceCreate,
     response: Response,
     db: Session = Depends(get_db),
+    current_user: AdminOrSupport = None,
 ) -> Device:
     add_custom_headers(response)
     return DeviceService.create_device(db, device_data)
@@ -102,6 +110,7 @@ def update_device_full(
     response: Response,
     device: Device = Depends(get_device_or_404),
     db: Session = Depends(get_db),
+    current_user: AdminOrSupport = None,
 ) -> Device:
     add_custom_headers(response)
     return DeviceService.update_device_full(db, device, device_data)
@@ -118,6 +127,7 @@ def update_device_partial(
     response: Response,
     device: Device = Depends(get_device_or_404),
     db: Session = Depends(get_db),
+    current_user: AdminOrSupport = None,
 ) -> Device:
     add_custom_headers(response)
     return DeviceService.update_device_partial(db, device, device_data)
@@ -133,6 +143,7 @@ def delete_device(
     response: Response,
     device: Device = Depends(get_device_or_404),
     db: Session = Depends(get_db),
+    current_user: AdminUser = None,
 ) -> None:
     add_custom_headers(response)
     DeviceService.delete_device(db, device)
