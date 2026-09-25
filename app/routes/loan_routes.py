@@ -1,9 +1,10 @@
 from typing import Optional
 
-from fastapi import APIRouter, Depends, Query, Response, status
+from fastapi import APIRouter, Depends, Query, Request, Response, status
 from sqlalchemy.orm import Session
 
 from app.dependencies.database_dependency import get_db
+from app.dependencies.auth_dependency import AdminOrSupport, CurrentUser
 from app.dependencies.loan_dependencies import get_loan_or_404
 from app.dependencies.user_dependencies import get_user_or_404
 from app.models.loan_model import Loan
@@ -16,6 +17,7 @@ from app.schemas.loan_schema import (
 )
 from app.services.device_service import DeviceService
 from app.services.loan_service import LoanService
+from app.security.rate_limit import limiter
 
 router = APIRouter(prefix="/loans", tags=["Loans"])
 
@@ -39,6 +41,7 @@ def list_loans(
     user_id: Optional[int] = Query(default=None, description="Filtrar por usuario"),
     device_id: Optional[int] = Query(default=None, description="Filtrar por dispositivo"),
     db: Session = Depends(get_db),
+    current_user: CurrentUser = None,
 ) -> LoanListResponse:
     add_custom_headers(response)
     loans = LoanService.get_all_loans(
@@ -66,6 +69,7 @@ def list_loan_details(
     user_id: Optional[int] = Query(default=None, description="Filtrar por usuario"),
     device_id: Optional[int] = Query(default=None, description="Filtrar por dispositivo"),
     db: Session = Depends(get_db),
+    current_user: AdminOrSupport = None,
 ) -> LoanDetailsListResponse:
     add_custom_headers(response)
     loans = LoanService.get_loans_details(
@@ -85,7 +89,11 @@ def list_loan_details(
     summary="Consultar préstamo por ID",
     description="Devuelve la información básica de un préstamo específico.",
 )
-def get_loan(response: Response, loan: Loan = Depends(get_loan_or_404)) -> Loan:
+def get_loan(
+    response: Response,
+    loan: Loan = Depends(get_loan_or_404),
+    current_user: CurrentUser = None,
+) -> Loan:
     add_custom_headers(response)
     return loan
 
@@ -100,6 +108,7 @@ def get_user_loans(
     response: Response,
     user_id: int,
     db: Session = Depends(get_db),
+    current_user: CurrentUser = None,
 ) -> LoanListResponse:
     add_custom_headers(response)
     get_user_or_404(user_id, db)
@@ -117,6 +126,7 @@ def get_device_loans(
     response: Response,
     device_id: int,
     db: Session = Depends(get_db),
+    current_user: CurrentUser = None,
 ) -> LoanListResponse:
     add_custom_headers(response)
     DeviceService.get_device_by_id(db, device_id)
@@ -131,10 +141,13 @@ def get_device_loans(
     summary="Crear préstamo",
     description="Crea un préstamo validando usuario y disponibilidad del dispositivo.",
 )
+@limiter.limit("10/minute")
 def create_loan(
+    request: Request,
     loan_data: LoanCreate,
     response: Response,
     db: Session = Depends(get_db),
+    current_user: CurrentUser = None,
 ) -> Loan:
     add_custom_headers(response)
     return LoanService.create_loan(db, loan_data)
@@ -150,6 +163,7 @@ def return_loan(
     response: Response,
     loan: Loan = Depends(get_loan_or_404),
     db: Session = Depends(get_db),
+    current_user: AdminOrSupport = None,
 ) -> Loan:
     add_custom_headers(response)
     return LoanService.return_loan(db, loan)
