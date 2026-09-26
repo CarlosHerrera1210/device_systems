@@ -6,5 +6,6 @@ venv/
 .pytest_cache/
 device_systems.db
 test_device_systems.db
+test_*.db
 pytest-cache-files-*/
 

@@ -1,18 +1,22 @@
 # device_systems API
 
-Evidencia **GA1-220501096-01-AA1-EV09 - FastAPI con SQLAlchemy: Persistencia de Datos y CRUD sobre Base de Datos**.
+Evidencia **GA1-220501096-01-AA1-EV11 - FastAPI Seguridad: Autenticación, Middleware, CORS, Rate Limiting y Validación Avanzada en device_systems**.
 
-`device_systems` es una aplicacion backend creada con FastAPI para administrar usuarios mediante una API REST conectada a SQLite con SQLAlchemy. Esta version deja de usar listas en memoria y aplica persistencia real, modelos ORM, schemas Pydantic v2, validaciones, constraints, operaciones CRUD completas y documentacion Swagger/OpenAPI.
+`device_systems` es una API REST segura desarrollada con FastAPI para gestionar usuarios, dispositivos y préstamos tecnológicos. Esta versión implementa registro, login OAuth2/JWT, hash de contraseñas, autorización por roles, middleware de trazabilidad, CORS, rate limiting y validaciones avanzadas con Pydantic v2.
 
-## Tecnologias utilizadas
+## Tecnologías utilizadas
 
 - Python 3.13
 - FastAPI
 - Uvicorn
 - SQLAlchemy
+- Alembic
+- python-jose
+- passlib y bcrypt
+- slowapi
+- python-dotenv
 - SQLite
 - Pydantic v2
-- email-validator
 - pytest
 - TestClient con httpx
 
@@ -20,53 +24,80 @@ Evidencia **GA1-220501096-01-AA1-EV09 - FastAPI con SQLAlchemy: Persistencia de 
 
 ```text
 device_systems/
+|-- alembic/
+|   |-- versions/
+|   |   |-- e93a42c8a2b1_create_devices_and_loans_tables.py
+|   |   `-- 97e7fe4102ac_add_authentication_fields_to_users.py
+|   |-- env.py
+|   |-- README
+|   `-- script.py.mako
 |-- app/
 |   |-- __init__.py
 |   |-- main.py
+|   |-- auth/
+|   |   |-- __init__.py
+|   |   |-- auth_routes.py
+|   |   |-- auth_service.py
+|   |   `-- security.py
 |   |-- database/
 |   |   |-- __init__.py
 |   |   `-- connection.py
 |   |-- dependencies/
-|   |   |-- __init__.py
 |   |   |-- database_dependency.py
-|   |   `-- user_dependencies.py
+|   |   |-- auth_dependency.py
+|   |   |-- device_dependencies.py
+|   |   |-- loan_dependencies.py
+|   |   |-- user_dependencies.py
 |   |-- models/
 |   |   |-- __init__.py
-|   |   `-- user_model.py
+|   |   |-- user_model.py
+|   |   |-- device_model.py
+|   |   |-- loan_model.py
 |   |-- routes/
 |   |   |-- __init__.py
-|   |   `-- user_routes.py
+|   |   |-- user_routes.py
+|   |   |-- device_routes.py
+|   |   |-- loan_routes.py
 |   |-- schemas/
 |   |   |-- __init__.py
-|   |   `-- user_schema.py
-|   `-- services/
-|       |-- __init__.py
-|       `-- user_service.py
+|   |   |-- auth_schema.py
+|   |   |-- user_schema.py
+|   |   |-- device_schema.py
+|   |   |-- loan_schema.py
+|   |-- services/
+|   |   |-- __init__.py
+|   |   |-- user_service.py
+|   |   |-- device_service.py
+|   |   |-- loan_service.py
+|   |-- middlewares/
+|   |   |-- __init__.py
+|   |   `-- request_middleware.py
+|   |-- security/
+|   |   |-- __init__.py
+|   |   `-- rate_limit.py
+|-- .env.example
 |-- images/
-|   |-- ev09_project_structure.png
-|   |-- ev09_database_file.png
-|   |-- ev09_pytest_results.png
-|   |-- ev09_swagger_ui.png
-|   |-- ev09_redoc_ui.png
-|   |-- ev09_get_users.png
-|   |-- ev09_get_user_by_id.png
-|   |-- ev09_filters.png
-|   |-- ev09_post_user.png
-|   |-- ev09_put_user.png
-|   |-- ev09_patch_user.png
-|   |-- ev09_delete_user.png
-|   |-- ev09_error_400_duplicate_email.png
-|   |-- ev09_error_404_user_not_found.png
-|   `-- ev09_error_422_validation.png
+|   |-- ev11_register.png
+|   |-- ev11_login.png
+|   |-- ev11_auth_me.png
+|   |-- ev11_no_token.png
+|   |-- ev11_invalid_token.png
+|   |-- ev11_forbidden.png
+|   |-- ev11_rate_limit.png
+|   |-- ev11_swagger_oauth2.png
 |-- tests/
-|   `-- test_users_api.py
+|   |-- test_users_api.py
+|   |-- test_ev10_relations.py
+|   `-- test_ev11_security.py
 |-- .gitignore
+|-- alembic.ini
 |-- pytest.ini
 |-- requirements.txt
+|-- device_systems.db
 `-- README.md
 ```
 
-## Instalacion
+## Instalación
 
 Crear y activar el entorno virtual:
 
@@ -86,179 +117,330 @@ Dependencias principales:
 - `fastapi`
 - `uvicorn`
 - `sqlalchemy`
+- `alembic`
 - `pydantic[email]`
+- `python-jose[cryptography]`
+- `passlib==1.7.4` y `bcrypt==4.0.1`
+- `slowapi`
+- `python-multipart`
+- `python-dotenv`
 - `pytest`
 - `httpx`
 
-## Ejecucion del servidor
+## Configuración de seguridad
 
-```bash
-uvicorn app.main:app --reload
-```
-
-La API queda disponible en:
-
-- API: `http://127.0.0.1:8000`
-- Swagger UI: `http://127.0.0.1:8000/docs`
-- ReDoc: `http://127.0.0.1:8000/redoc`
-
-Al iniciar el servidor, SQLAlchemy crea la base de datos local:
+Copiar `.env.example` como `.env` y cambiar la clave antes de usar la API fuera de desarrollo:
 
 ```text
-device_systems.db
+JWT_SECRET_KEY=change-this-secret-in-production
+JWT_ALGORITHM=HS256
+JWT_ACCESS_TOKEN_EXPIRE_MINUTES=30
+ALLOWED_ORIGINS=http://localhost:5173,http://localhost:3000
 ```
 
-## Configuracion de SQLAlchemy
+Las contraseñas requieren mínimo 8 caracteres, mayúscula, minúscula, número y ningún espacio.
+Se almacenan únicamente como hash bcrypt y `hashed_password` nunca aparece en los schemas de respuesta.
 
-La conexion se define en `app/database/connection.py`:
+El registro público no permite autoasignar el rol `admin`; ese rol debe asignarse mediante un proceso administrativo controlado.
 
-```python
-DATABASE_URL = "sqlite:///./device_systems.db"
+### OAuth2, JWT y roles
+
+| Método | Endpoint         | Protección                            |
+| ------ | ---------------- | ------------------------------------- |
+| POST   | `/auth/register` | Pública, con validación de contraseña |
+| POST   | `/auth/login`    | Pública, devuelve token Bearer        |
+| GET    | `/auth/me`       | Token JWT obligatorio                 |
+
+- `user`: puede consultar y crear préstamos.
+- `support`: puede crear y actualizar dispositivos y devolver préstamos.
+- `admin`: puede realizar operaciones administrativas, incluida la eliminación de dispositivos.
+
+Las rutas privadas responden `401 Unauthorized` sin token o con token inválido y `403 Forbidden` cuando el rol no tiene permisos.
+
+### Middleware y CORS
+
+Cada respuesta incorpora `X-App-Name`, `X-API-Version`, `X-Process-Time` y `X-Request-ID`. El `X-Request-ID` recibido se propaga o se genera automáticamente.
+
+CORS permite `http://localhost:5173` y `http://localhost:3000`, con credenciales, métodos y headers habilitados. No se usa `*` como origen cuando hay credenciales porque permitiría que cualquier sitio realice peticiones autenticadas.
+
+### Rate limiting
+
+| Endpoint              | Límite        |
+| --------------------- | ------------- |
+| POST `/auth/login`    | 5 por minuto  |
+| POST `/auth/register` | 3 por minuto  |
+| GET `/users`          | 30 por minuto |
+| POST `/loans`         | 10 por minuto |
+
+Cuando se supera el límite, SlowAPI responde `429 Too Many Requests`.
+
+## Migraciones con Alembic
+
+La migración de autenticación agrega `hashed_password` a la tabla `users`; los campos `role` e `is_active` ya forman parte del esquema base.
+
+```bash
+alembic history
+alembic upgrade head
+alembic check
 ```
 
-Elementos principales:
+La revisión actual confirma que no existen operaciones pendientes de migración.
 
-- `engine`: administra la conexion con SQLite.
-- `SessionLocal`: crea sesiones de base de datos.
-- `Base`: clase base para declarar modelos SQLAlchemy.
-- `create_tables()`: crea las tablas al iniciar FastAPI.
+### Evidencia de migración aplicada
 
-La dependencia `get_db()` vive en `app/dependencies/database_dependency.py` y entrega una sesion de base de datos a cada endpoint usando `Depends()`.
+![Migración Alembic EV11](images/ev11_alembic_upgrade.png)
 
-## Modelo SQLAlchemy User
+Resultado real de la verificación:
 
-El modelo `User` esta en `app/models/user_model.py` y representa la tabla `users`.
+```text
+97e7fe4102ac (head)
+No new upgrade operations detected.
+```
 
-| Campo | Tipo | Restriccion |
-|---|---|---|
-| `id` | Integer | Primary key e indice |
-| `name` | String | Obligatorio |
-| `email` | String | Unico, obligatorio e indexado |
-| `role` | String | Obligatorio y limitado a `admin`, `support` o `user` |
-| `is_active` | Boolean | Por defecto `True` |
-| `created_at` | DateTime | Fecha automatica de creacion |
+## Evidencia visual EV11
+
+### Registro y login
+
+![Registro EV11](images/ev11_register.png)
+
+![Login EV11](images/ev11_login.png)
+
+![Usuario autenticado EV11](images/ev11_auth_me.png)
+
+### Validación de autenticación
+
+![Sin token EV11](images/ev11_no_token.png)
+
+![Token inválido EV11](images/ev11_invalid_token.png)
+
+![Acceso prohibido EV11](images/ev11_forbidden.png)
+
+### Rate limiting y Swagger OAuth2
+
+![Rate limit EV11](images/ev11_rate_limit.png)
+
+![Swagger OAuth2 EV11](images/ev11_swagger_oauth2.png)
+
+### Video de demostración
+
+<video controls width="100%" src="video/device_systems%20API%20-%20Swagger%20UI%20-%20Google%20Chrome%202026-09-26%2015-29-03.mp4"></video>
+
+## Modelos del sistema
+
+### User
+
+Representa a los usuarios del sistema.
+
+| Campo             | Tipo     | Restricción                  |
+| ----------------- | -------- | ---------------------------- |
+| `id`              | Integer  | PK                           |
+| `name`            | String   | Obligatorio                  |
+| `email`           | String   | Único y obligatorio          |
+| `hashed_password` | String   | Hash bcrypt, nunca se expone |
+| `role`            | String   | admin, support o user        |
+| `is_active`       | Boolean  | Por defecto `True`           |
+| `created_at`      | DateTime | Fecha de registro            |
+
+### Device
+
+Representa un equipo tecnológico disponible para préstamo.
+
+| Campo           | Tipo     | Restricción                                        |
+| --------------- | -------- | -------------------------------------------------- |
+| `id`            | Integer  | PK                                                 |
+| `name`          | String   | Obligatorio                                        |
+| `serial_number` | String   | Único y obligatorio                                |
+| `device_type`   | String   | laptop, tablet, proyector, camara, router, monitor |
+| `brand`         | String   | Opcional                                           |
+| `is_available`  | Boolean  | Por defecto `True`                                 |
+| `created_at`    | DateTime | Fecha de creación                                  |
+
+### Loan
+
+Representa el préstamo de un dispositivo a un usuario.
+
+| Campo         | Tipo     | Restricción                |
+| ------------- | -------- | -------------------------- |
+| `id`          | Integer  | PK                         |
+| `user_id`     | Integer  | FK a `users.id`            |
+| `device_id`   | Integer  | FK a `devices.id`          |
+| `loan_date`   | DateTime | Fecha de préstamo          |
+| `return_date` | DateTime | Opcional                   |
+| `status`      | String   | active, returned o overdue |
+
+## Relaciones entre modelos
+
+Se usan relaciones con `relationship()` y `back_populates()`:
+
+- `User.loans` -> muchos préstamos por usuario
+- `Device.loans` -> historial de préstamos por dispositivo
+- `Loan.user` -> usuario relacionado
+- `Loan.device` -> dispositivo relacionado
+
+Esto permite consultar información relacionada entre tablas con joins y evitar duplicación de datos en la lógica de negocio.
 
 ## Schemas Pydantic
 
-Los schemas viven en `app/schemas/user_schema.py`.
+Los schemas están organizados por recurso:
 
-- `UserCreate`: valida la creacion de usuarios.
-- `UserUpdate`: valida actualizacion completa con `PUT`.
-- `UserPatch`: valida actualizacion parcial con `PATCH`.
-- `UserResponse`: controla la respuesta enviada al cliente.
-- `UserListResponse`: estandariza el listado con `total` y `users`.
+- `auth_schema.py`
+- `user_schema.py`
+- `device_schema.py`
+- `loan_schema.py`
 
-Validaciones:
+Incluyen:
 
-- `name`: obligatorio, minimo 3 caracteres.
-- `email`: formato valido.
-- `role`: solo permite `admin`, `support` o `user`.
-- `is_active`: valor booleano.
+- `Create`
+- `Update`
+- `Patch`
+- `Response`
+- `ListResponse`
+- `DetailResponse`
 
-El modelo SQLAlchemy también aplica el constraint `ck_users_role_allowed`, que impide
-guardar directamente en SQLite un rol diferente de `admin`, `support` o `user`.
+## Endpoints principales
 
-## Diferencia entre modelo y schema
+### Users
 
-El modelo SQLAlchemy describe la tabla real de la base de datos: columnas, tipos, indices y restricciones. Se usa para guardar, consultar, actualizar y eliminar registros.
+| Método | Endpoint           | Descripción                    |
+| ------ | ------------------ | ------------------------------ |
+| GET    | `/users`           | Listar usuarios                |
+| GET    | `/users/{user_id}` | Consultar usuario              |
+| POST   | `/users`           | Crear usuario, solo admin      |
+| PUT    | `/users/{user_id}` | Actualizar usuario, solo admin |
+| PATCH  | `/users/{user_id}` | Actualizar usuario, solo admin |
+| DELETE | `/users/{user_id}` | Eliminar usuario, solo admin   |
 
-El schema Pydantic describe los datos que entran y salen por la API. Se usa para validar peticiones, controlar respuestas y generar documentacion clara en Swagger.
+### Devices
 
-## Endpoints
+| Método | Endpoint               | Descripción                             |
+| ------ | ---------------------- | --------------------------------------- |
+| GET    | `/devices`             | Listar dispositivos                     |
+| GET    | `/devices/{device_id}` | Consultar dispositivo                   |
+| POST   | `/devices`             | Crear dispositivo, admin o support      |
+| PUT    | `/devices/{device_id}` | Actualizar dispositivo, admin o support |
+| PATCH  | `/devices/{device_id}` | Actualizar dispositivo, admin o support |
+| DELETE | `/devices/{device_id}` | Eliminar dispositivo, solo admin        |
 
-| Metodo | Endpoint | Descripcion |
-|---|---|---|
-| GET | `/` | Verifica el estado de la API |
-| GET | `/users` | Lista usuarios desde la base de datos |
-| GET | `/users/{user_id}` | Consulta un usuario por ID |
-| GET | `/users?role=admin` | Filtra usuarios por rol |
-| GET | `/users?is_active=true` | Filtra usuarios activos o inactivos |
-| GET | `/users?order_by=name` | Ordena usuarios por nombre |
-| POST | `/users` | Crea un usuario |
-| PUT | `/users/{user_id}` | Actualiza completamente un usuario |
-| PATCH | `/users/{user_id}` | Actualiza parcialmente un usuario |
-| DELETE | `/users/{user_id}` | Elimina un usuario |
+### Loans
 
-## Ejemplos de peticiones
+| Método | Endpoint                     | Descripción                           |
+| ------ | ---------------------------- | ------------------------------------- |
+| GET    | `/loans`                     | Listar préstamos, usuario autenticado |
+| GET    | `/loans/details`             | Consultar joins, admin o support      |
+| GET    | `/loans/{loan_id}`           | Consultar préstamo por ID             |
+| GET    | `/users/{user_id}/loans`     | Ver préstamos de un usuario           |
+| GET    | `/devices/{device_id}/loans` | Ver historial del dispositivo         |
+| POST   | `/loans`                     | Crear préstamo, usuario autenticado   |
+| PATCH  | `/loans/{loan_id}/return`    | Devolver dispositivo, admin o support |
 
-Listar usuarios:
+## Filtros avanzados
+
+Se implementaron filtros para:
+
+- `GET /devices?device_type=laptop`
+- `GET /devices?is_available=true`
+- `GET /devices?brand=lenovo`
+- `GET /devices?search=thinkpad`
+- `GET /loans?status=active`
+- `GET /loans?user_email=ana@sena.edu.co`
+- `GET /loans?device_type=laptop`
+- `GET /users/1/loans`
+- `GET /devices/1/loans`
+
+## Reglas de negocio
+
+La aplicación valida correctamente:
+
+- usuario inexistente
+- dispositivo inexistente
+- dispositivo no disponible
+- préstamo inexistente
+- préstamo ya devuelto
+- serial duplicado
+- filtros inválidos
+
+### Códigos esperados
+
+| Caso                        | Código                     |
+| --------------------------- | -------------------------- |
+| Registro creado             | `201 Created`              |
+| Consulta exitosa            | `200 OK`                   |
+| Devolución exitosa          | `200 OK`                   |
+| Eliminación exitosa         | `204 No Content`           |
+| Recurso no encontrado       | `404 Not Found`            |
+| Dato duplicado              | `400 Bad Request`          |
+| Regla de negocio incumplida | `409 Conflict`             |
+| Error de validación         | `422 Unprocessable Entity` |
+
+## Ejemplos de uso
+
+### Registrar usuario
 
 ```bash
-curl http://127.0.0.1:8000/users
+curl -X POST "http://127.0.0.1:8000/auth/register" \
+  -H "Content-Type: application/json" \
+  -d '{"name":"Ana Perez","email":"ana@sena.edu.co","password":"SecurePass1","role":"user","is_active":true}'
 ```
 
-Buscar usuario por ID:
+### Iniciar sesión
 
 ```bash
-curl http://127.0.0.1:8000/users/1
+curl -X POST "http://127.0.0.1:8000/auth/login" \
+  -H "Content-Type: application/x-www-form-urlencoded" \
+  -d "username=ana@sena.edu.co&password=SecurePass1"
 ```
 
-Filtrar por rol:
+La respuesta contiene `access_token` y `token_type: bearer`. Para las rutas protegidas se envía:
 
 ```bash
-curl "http://127.0.0.1:8000/users?role=admin"
+Authorization: Bearer <access_token>
 ```
 
-Filtrar por estado:
+### Crear dispositivo
 
 ```bash
-curl "http://127.0.0.1:8000/users?is_active=true"
+curl -X POST "http://127.0.0.1:8000/devices" \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer <access_token>" \
+  -d '{"name":"Laptop Lenovo ThinkPad","serial_number":"LEN-2024-001","device_type":"laptop","brand":"Lenovo","is_available":true}'
 ```
 
-Crear usuario:
+### Crear préstamo
 
 ```bash
-curl -X POST http://127.0.0.1:8000/users ^
-  -H "Content-Type: application/json" ^
-  -d "{\"name\":\"Maria Lopez\",\"email\":\"maria@example.com\",\"role\":\"user\",\"is_active\":true}"
+curl -X POST "http://127.0.0.1:8000/loans" \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer <access_token>" \
+  -d '{"user_id":1,"device_id":1,"status":"active"}'
 ```
 
-Actualizar usuario completo:
+### Consultar préstamos con información relacionada
 
 ```bash
-curl -X PUT http://127.0.0.1:8000/users/1 ^
-  -H "Content-Type: application/json" ^
-  -d "{\"name\":\"Carlos Actualizado\",\"email\":\"carlos.actualizado@example.com\",\"role\":\"support\",\"is_active\":false}"
+curl "http://127.0.0.1:8000/loans/details" \
+  -H "Authorization: Bearer <access_token>"
 ```
 
-Actualizar usuario parcial:
+### Devolver dispositivo
 
 ```bash
-curl -X PATCH http://127.0.0.1:8000/users/1 ^
-  -H "Content-Type: application/json" ^
-  -d "{\"role\":\"support\"}"
-```
-
-Eliminar usuario:
-
-```bash
-curl -X DELETE http://127.0.0.1:8000/users/1
-```
-
-## Codigos HTTP
-
-| Caso | Codigo |
-|---|---|
-| Usuario creado | `201 Created` |
-| Consulta correcta | `200 OK` |
-| Actualizacion correcta | `200 OK` |
-| Eliminacion correcta | `204 No Content` |
-| Usuario no encontrado | `404 Not Found` |
-| Email duplicado | `400 Bad Request` |
-| Error de validacion | `422 Unprocessable Entity` |
-
-## Cabeceras HTTP personalizadas
-
-Los endpoints retornan:
-
-```text
-X-App-Name: device_systems
-X-API-Version: 3.0.0
+curl -X PATCH "http://127.0.0.1:8000/loans/1/return" \
+  -H "Authorization: Bearer <access_token>"
 ```
 
 ## Pruebas automatizadas
 
-El proyecto incluye pruebas con `pytest` y `TestClient` para verificar CRUD, persistencia entre sesiones, filtros, cabeceras, validaciones, errores y documentacion OpenAPI.
+Se ejecutan pruebas con `pytest` para verificar:
+
+- creación de usuario
+- creación de dispositivo
+- creación de préstamo
+- validación de disponibilidad
+- devolución de equipo
+- filtrado por estado y tipo de dispositivo
+- consumo de historial por usuario y por dispositivo
+- autenticación JWT, rutas protegidas y autorización por roles
+- CORS, cabeceras de trazabilidad y rate limiting
 
 ```bash
 pytest -q
@@ -267,72 +449,31 @@ pytest -q
 Resultado validado:
 
 ```text
-21 passed
+32 passed en la suite completa
 ```
 
-## Evidencias
+## Evidencias de aprendizaje EV11
 
-### Estructura del proyecto
+Las siguientes capturas fueron tomadas directamente de la API local en ejecución:
 
-![Estructura del proyecto EV09](images/ev09_project_structure.png)
+- Registro: ![Registro EV11](images/ev11_register.png)
+- Login y token JWT: ![Login EV11](images/ev11_login.png)
+- Usuario autenticado: ![Auth me EV11](images/ev11_auth_me.png)
+- Acceso sin token: ![Sin token EV11](images/ev11_no_token.png)
+- Token inválido: ![Token inválido EV11](images/ev11_invalid_token.png)
+- Rol no permitido: ![Rol no permitido EV11](images/ev11_forbidden.png)
+- Rate limiting `429`: ![Rate limiting EV11](images/ev11_rate_limit.png)
+- Swagger con OAuth2: ![Swagger OAuth2 EV11](images/ev11_swagger_oauth2.png)
+- Migración Alembic aplicada: ![Migración Alembic EV11](images/ev11_alembic_upgrade.png)
 
-### Base de datos SQLite
+La suite automatizada cubre autenticación JWT, autorización por roles, CORS, cabeceras del
+middleware, validaciones y rate limiting. Resultado validado: `32 passed`.
 
-![Archivo de base de datos EV09](images/ev09_database_file.png)
+El middleware registra método, ruta, código de estado y `X-Request-ID`, y agrega `X-App-Name`,
+`X-API-Version`, `X-Process-Time` y `X-Request-ID`.
 
-### Swagger UI
+## Reflexión final
 
-![Swagger UI de EV09](images/ev09_swagger_ui.png)
+La seguridad es fundamental en una API REST porque protege la información y controla quién puede ejecutar cada operación. En `device_systems`, las contraseñas se almacenan como hashes bcrypt, el login utiliza OAuth2 y JWT, y las dependencias verifican la identidad, el estado activo y el rol del usuario antes de permitir operaciones sensibles.
 
-### ReDoc
-
-![ReDoc de EV09](images/ev09_redoc_ui.png)
-
-### Listado de usuarios desde SQLite
-
-![Listado de usuarios EV09](images/ev09_get_users.png)
-
-### Consulta de usuario por ID desde SQLite
-
-![Consulta por ID EV09](images/ev09_get_user_by_id.png)
-
-### Filtros por rol y estado desde SQLite
-
-![Filtros EV09](images/ev09_filters.png)
-
-### Creación de usuario
-
-![POST de usuario EV09](images/ev09_post_user.png)
-
-### Actualización completa
-
-![PUT de usuario EV09](images/ev09_put_user.png)
-
-### Actualización parcial
-
-![PATCH de usuario EV09](images/ev09_patch_user.png)
-
-### Eliminación de usuario
-
-![DELETE de usuario EV09](images/ev09_delete_user.png)
-
-### Error 400: correo duplicado
-
-![Error 400 por correo duplicado](images/ev09_error_400_duplicate_email.png)
-
-### Error 404: usuario inexistente
-
-![Error 404 por usuario inexistente](images/ev09_error_404_user_not_found.png)
-
-### Error 422: datos inválidos
-
-![Error 422 de validación](images/ev09_error_422_validation.png)
-
-### Resultado de pruebas automatizadas
-
-![Resultado de pytest EV09](images/ev09_pytest_results.png)
-
-## Reflexion final
-
-Usar persistencia en una API es importante porque los datos dejan de depender de la memoria del programa y permanecen disponibles aunque el servidor se reinicie. SQLAlchemy permite trabajar con la base de datos desde Python usando modelos claros, consultas ordenadas y operaciones CRUD mantenibles. FastAPI y Pydantic complementan esa persistencia con validaciones automaticas, documentacion Swagger y respuestas estructuradas para construir servicios backend mas profesionales.
-
+El middleware aporta trazabilidad mediante tiempo de respuesta, cabeceras globales, correlation ID y registro de método, ruta y código de estado. CORS limita los orígenes autorizados para clientes frontend, mientras que SlowAPI reduce el riesgo de abuso mediante límites de peticiones. En conjunto, estas medidas convierten el CRUD original en una API más controlada, auditable y preparada para integrarse con clientes externos.
