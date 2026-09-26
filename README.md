@@ -197,6 +197,34 @@ Resultado real de la verificación:
 No new upgrade operations detected.
 ```
 
+## Evidencia visual EV11
+
+### Registro y login
+
+![Registro EV11](images/ev11_register.png)
+
+![Login EV11](images/ev11_login.png)
+
+![Usuario autenticado EV11](images/ev11_auth_me.png)
+
+### Validación de autenticación
+
+![Sin token EV11](images/ev11_no_token.png)
+
+![Token inválido EV11](images/ev11_invalid_token.png)
+
+![Acceso prohibido EV11](images/ev11_forbidden.png)
+
+### Rate limiting y Swagger OAuth2
+
+![Rate limit EV11](images/ev11_rate_limit.png)
+
+![Swagger OAuth2 EV11](images/ev11_swagger_oauth2.png)
+
+### Video de demostración
+
+<video controls width="100%" src="video/device_systems%20API%20-%20Swagger%20UI%20-%20Google%20Chrome%202026-09-26%2015-29-03.mp4"></video>
+
 ## Modelos del sistema
 
 ### User
