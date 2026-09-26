@@ -225,6 +225,10 @@ No new upgrade operations detected.
 
 <video controls width="100%" src="video/device_systems%20API%20-%20Swagger%20UI%20-%20Google%20Chrome%202026-09-26%2015-29-03.mp4"></video>
 
+### enlace del video
+
+https://youtu.be/n8r5sJHEGKE
+
 ## Modelos del sistema
 
 ### User
